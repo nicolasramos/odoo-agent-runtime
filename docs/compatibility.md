@@ -64,4 +64,4 @@ Runtime `0.2.x` accepts execution payloads with optional chat fields:
 - `chat_message_id`;
 - `conversation`.
 
-For `source=chat`, the runtime includes conversation context in the instruction sent to the configured CLI.
+For `source=chat`, the runtime includes the current user message and conversation context in the instruction sent to the configured CLI. The Project task title is not prepended as the primary task, which prevents short chat messages from being redirected toward the task title.

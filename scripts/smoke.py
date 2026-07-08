@@ -107,6 +107,20 @@ def main():
     assert 'Use this prompt.' in task_instruction
     assert 'Do not use this description.' not in task_instruction
 
+    chat_instruction = runtime._build_instruction(
+        '[NF-102] Implement synchronizer — message to OpenCode N100',
+        'Hola',
+        {},
+        conversation=[
+            {'author_type': 'user', 'content': 'Hola'},
+        ],
+        source='chat',
+    )
+    assert 'User message:\nHola' in chat_instruction
+    assert 'Conversation:' in chat_instruction
+    assert 'Task:' not in chat_instruction
+    assert '[NF-102]' not in chat_instruction
+
     recorder = RecordingRuntime()
     assert recorder.start_task(50) is True
     assert recorder.calls[-1][1] == '/api/agent/execution/50/start'

@@ -161,6 +161,8 @@ LGPL-3.
 
 ## Chat executions
 
-When Odoo sends an execution with `source=chat`, the runtime includes the recent conversation in the final instruction. The final CLI output is reported as the execution result; Odoo turns that result into the agent chat reply.
+When Odoo sends an execution with `source=chat`, the runtime treats the current prompt as a user message and includes the recent conversation in the final instruction. It does not prepend the Project task title as the primary `Task`, so short messages such as "hello" remain conversational instead of being interpreted as a request to work on the task title.
+
+The final CLI output is reported as the execution result; Odoo turns that result into the agent chat reply.
 
 The runtime can also send intermediate messages through `POST /api/agent/execution/{id}/message`.

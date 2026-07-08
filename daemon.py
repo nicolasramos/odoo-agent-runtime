@@ -96,7 +96,7 @@ class OdooAgentRuntime:
     def send_heartbeat(self):
         """Send heartbeat to Odoo."""
         data = {
-            'version': '0.2.0',
+            'version': '0.2.1',
             'runtime_name': self.name,
             'device_info': get_device_info(),
         }
@@ -181,6 +181,7 @@ class OdooAgentRuntime:
         """Execute a task using the configured agent CLI."""
         task_id = task['id']
         task_name = task.get('name') or task.get('task_name') or f'Execution {task_id}'
+        task_source = task.get('source') or 'task'
         task_prompt = _first_present(task.get('prompt'), task.get('description'), task.get('task_description'), '')
         agent_config = self._extract_agent_config(task)
         agent_name = agent_config.get('name') or task.get('agent_name') or 'unknown'
@@ -195,7 +196,13 @@ class OdooAgentRuntime:
             return
 
         try:
-            instruction = self._build_instruction(task_name, task_prompt, agent_config, conversation=conversation)
+            instruction = self._build_instruction(
+                task_name,
+                task_prompt,
+                agent_config,
+                conversation=conversation,
+                source=task_source,
+            )
             self.send_log(task_id, 'info', f'Agent: {agent_name}', command='agent')
             self.send_log(task_id, 'info', f'Instruction prepared ({len(instruction)} chars)')
 
@@ -231,11 +238,16 @@ class OdooAgentRuntime:
             'mcp_servers': _first_present(agent.get('mcp_servers'), task.get('mcp_servers')),
         }
 
-    def _build_instruction(self, task_name, task_prompt, agent_config, conversation=None):
+    def _build_instruction(self, task_name, task_prompt, agent_config, conversation=None, source='task'):
         """Build the instruction sent to the external CLI."""
-        sections = [f'Task: {task_name}']
-        if task_prompt:
-            sections.append(f'Prompt:\n{task_prompt}')
+        if source == 'chat':
+            sections = []
+            if task_prompt:
+                sections.append(f'User message:\n{task_prompt}')
+        else:
+            sections = [f'Task:\n{task_name}']
+            if task_prompt:
+                sections.append(f'Prompt:\n{task_prompt}')
         if conversation:
             sections.append(f'Conversation:\n{self._format_conversation(conversation)}')
         if agent_config.get('instructions'):
