@@ -120,7 +120,7 @@ See [`docs/service-management.md`](docs/service-management.md) for systemd, laun
 
 ## Engine examples
 
-See [`docs/engine-examples.md`](docs/engine-examples.md) for Codex, Hermes, OpenCode, OpenClaw, Claude Code, and Custom CLI examples. See [`docs/configuration.md`](docs/configuration.md), [`docs/security.md`](docs/security.md), and [`docs/troubleshooting.md`](docs/troubleshooting.md) for operations guidance.
+See [`docs/engine-examples.md`](docs/engine-examples.md) for Codex, Hermes, OpenCode, OpenClaw, Claude Code, and Custom CLI examples. See [`docs/compatibility.md`](docs/compatibility.md), [`docs/configuration.md`](docs/configuration.md), [`docs/security.md`](docs/security.md), and [`docs/troubleshooting.md`](docs/troubleshooting.md) for operations guidance.
 
 ## Troubleshooting
 
