@@ -12,7 +12,8 @@ It supports Linux, macOS, and Windows.
 4. Builds the final instruction from task, agent, skills, and MCP configuration.
 5. Executes the configured CLI command.
 6. Streams logs back to Odoo.
-7. Completes, fails, or acknowledges cancellation.
+7. Sends optional intermediate chat messages.
+8. Completes, fails, or acknowledges cancellation.
 
 ## Quick path
 
@@ -156,3 +157,10 @@ Before publishing, create the public repository, push `main`, and verify the raw
 ## License
 
 LGPL-3.
+
+
+## Chat executions
+
+When Odoo sends an execution with `source=chat`, the runtime includes the recent conversation in the final instruction. The final CLI output is reported as the execution result; Odoo turns that result into the agent chat reply.
+
+The runtime can also send intermediate messages through `POST /api/agent/execution/{id}/message`.

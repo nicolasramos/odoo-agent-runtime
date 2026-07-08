@@ -35,9 +35,15 @@ def main():
             'skills': ['example-skill'],
             'mcp_servers': {'example': {'enabled': True}},
         },
+        conversation=[
+            {'author_type': 'user', 'content': 'Can you check this?'},
+            {'author_type': 'agent', 'content': 'I am checking it.'},
+        ],
     )
     assert 'Smoke task' in instruction
     assert 'Prompt:\nPrimary prompt text.' in instruction
+    assert 'Conversation:' in instruction
+    assert 'user: Can you check this?' in instruction
     assert 'example-skill' in instruction
 
     cmd = runtime._resolve_command(
@@ -110,6 +116,8 @@ def main():
     assert recorder.calls[-1][1] == '/api/agent/execution/50/complete'
     assert recorder.complete_task(50, 'failed', error='boom') is True
     assert recorder.calls[-1][1] == '/api/agent/execution/50/fail'
+    assert recorder.send_message(50, 'intermediate reply') is True
+    assert recorder.calls[-1][1] == '/api/agent/execution/50/message'
 
     recorder.fail_new_routes = True
     assert recorder.start_task(51) is True

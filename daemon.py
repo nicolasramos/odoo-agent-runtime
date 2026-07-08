@@ -96,7 +96,7 @@ class OdooAgentRuntime:
     def send_heartbeat(self):
         """Send heartbeat to Odoo."""
         data = {
-            'version': '0.1.0',
+            'version': '0.2.0',
             'runtime_name': self.name,
             'device_info': get_device_info(),
         }
@@ -168,6 +168,15 @@ class OdooAgentRuntime:
         )
         return self._is_ok(result)
 
+    def send_message(self, task_id, message):
+        """Send an intermediate agent chat message for an execution."""
+        result = self._request(
+            'POST',
+            f'/api/agent/execution/{task_id}/message',
+            json={'message': message},
+        )
+        return self._is_ok(result)
+
     def execute_task(self, task):
         """Execute a task using the configured agent CLI."""
         task_id = task['id']
@@ -175,6 +184,7 @@ class OdooAgentRuntime:
         task_prompt = _first_present(task.get('prompt'), task.get('description'), task.get('task_description'), '')
         agent_config = self._extract_agent_config(task)
         agent_name = agent_config.get('name') or task.get('agent_name') or 'unknown'
+        conversation = task.get('conversation') if isinstance(task.get('conversation'), list) else []
 
         logger.info(f'Starting task {task_id}: {task_name} (agent: {agent_name})')
         self.send_log(task_id, 'info', f'Starting task: {task_name}', command='init')
@@ -185,7 +195,7 @@ class OdooAgentRuntime:
             return
 
         try:
-            instruction = self._build_instruction(task_name, task_prompt, agent_config)
+            instruction = self._build_instruction(task_name, task_prompt, agent_config, conversation=conversation)
             self.send_log(task_id, 'info', f'Agent: {agent_name}', command='agent')
             self.send_log(task_id, 'info', f'Instruction prepared ({len(instruction)} chars)')
 
@@ -221,11 +231,13 @@ class OdooAgentRuntime:
             'mcp_servers': _first_present(agent.get('mcp_servers'), task.get('mcp_servers')),
         }
 
-    def _build_instruction(self, task_name, task_prompt, agent_config):
+    def _build_instruction(self, task_name, task_prompt, agent_config, conversation=None):
         """Build the instruction sent to the external CLI."""
         sections = [f'Task: {task_name}']
         if task_prompt:
             sections.append(f'Prompt:\n{task_prompt}')
+        if conversation:
+            sections.append(f'Conversation:\n{self._format_conversation(conversation)}')
         if agent_config.get('instructions'):
             sections.append(f'Agent instructions:\n{agent_config["instructions"]}')
         if agent_config.get('skills'):
@@ -238,6 +250,17 @@ class OdooAgentRuntime:
         if isinstance(value, str):
             return value
         return json.dumps(value, indent=2, sort_keys=True)
+
+    def _format_conversation(self, conversation):
+        lines = []
+        for message in conversation[-20:]:
+            if not isinstance(message, dict):
+                continue
+            author = message.get('author_type') or 'unknown'
+            content = message.get('content') or ''
+            if content:
+                lines.append(f'{author}: {content}')
+        return '\n'.join(lines)
 
     def _split_cli_command(self, cli_command):
         """Split a configured CLI command into argv tokens."""
