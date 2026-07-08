@@ -1,0 +1,13 @@
+repos:
+  - repo: local
+    hooks:
+      - id: runtime-static-validation
+        name: Runtime static validation
+        entry: bash -c 'python3 -m py_compile daemon.py scripts/smoke.py && python3 scripts/smoke.py && bash -n install.sh'
+        language: system
+        pass_filenames: false
+      - id: trailing-whitespace
+        name: Trailing whitespace
+        entry: python3 -c "import pathlib,sys; bad=[]; paths=[p for p in pathlib.Path('.').rglob('*') if p.is_file() and '.git' not in p.parts and p.suffix in {'.py','.md','.yml','.yaml','.sh','.ps1','.txt'}];\nfor p in paths:\n    lines=p.read_text(errors='ignore').splitlines();\n    bad += [f'{p}:{i}' for i,l in enumerate(lines,1) if l.rstrip()!=l];\nprint('\\n'.join(bad)); sys.exit(bool(bad))"
+        language: system
+        pass_filenames: false

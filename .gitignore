@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Runtime config and logs
+.env
+.env.*
+!.env.example
+logs/
+*.log
+
+# Virtual environments
+venv/
+.venv/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Local agent/code intelligence caches
+.codebase-memory/
+.atl/
