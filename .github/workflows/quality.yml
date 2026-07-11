@@ -13,10 +13,18 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: python3 -m pip install -r requirements.txt
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
       - name: Compile runtime
         run: python3 -m py_compile daemon.py scripts/smoke.py
+      - name: Run runtime unit tests
+        run: python3 -m unittest tests.test_daemon
       - name: Run smoke checks
         run: python3 scripts/smoke.py
       - name: Check shell installer syntax
         run: bash -n install.sh
+      - name: Check repository text and release URLs
+        run: |
+          ! grep -RIn --exclude-dir=.git 'raw\.githubusercontent\.com/nicolasramos[-]es/odoo-agent-runtime' README.md docs install.sh install.ps1 .github LICENSE
+          test -s LICENSE

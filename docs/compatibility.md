@@ -43,6 +43,14 @@ The Odoo addon must provide:
 - `POST /api/agent/execution/{id}/cancel/ack`
 - `POST /api/agent/execution/{id}/message`
 
+## Support status
+
+The runtime supports the documented payload and command interfaces below.
+"Supported" is an implementation and documentation claim, not a certification
+that every external CLI, operating system, or MCP transport has completed a
+real-environment test. Only checklist entries marked with release evidence are
+E2E-proven for that release.
+
 ## Operational compatibility
 
 A compatible Odoo agent configuration should send:
@@ -54,6 +62,11 @@ A compatible Odoo agent configuration should send:
 - skills;
 - MCP server configuration;
 - timeout and execution limits.
+
+MCP server configuration is passed through as instruction context. It does not
+by itself prove that a particular stdio or HTTP server can authenticate, start,
+or complete an end-to-end execution. Validate each production integration in
+the release checklist.
 
 
 ## Chat execution support

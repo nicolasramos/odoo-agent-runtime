@@ -2,7 +2,16 @@
 
 Odoo Agent Runtime is the cross-platform daemon that executes Odoo AI Agent System work on real machines. It connects to Odoo, polls queued executions, runs the configured local agent CLI, streams logs, and reports the final result.
 
-It supports Linux, macOS, and Windows.
+## Release confidence
+
+**Supported** means the runtime exposes an implementation path and documented
+operator guidance. **E2E-proven** means that behavior has been exercised in a
+real release environment. Platform, engine, skill, and MCP combinations remain
+supported only until they are checked off in the mandatory release checklist.
+
+The runtime supports Linux, macOS, and Windows. See
+[`docs/release-checklist.md`](docs/release-checklist.md) for the required
+cross-platform and integration evidence before claiming a release is E2E-proven.
 
 ## What it does
 
@@ -34,7 +43,7 @@ It supports Linux, macOS, and Windows.
 ## Linux and macOS install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nicolasramos-es/odoo-agent-runtime/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nicolasramos/odoo-agent-runtime/main/install.sh | bash
 ```
 
 The installer asks for:
@@ -60,7 +69,7 @@ Open PowerShell. Use Administrator only if your environment requires it for Sche
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/nicolasramos-es/odoo-agent-runtime/main/install.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/nicolasramos/odoo-agent-runtime/main/install.ps1'))
 ```
 
 Choose manual mode for a first test. Choose scheduled task mode only after the manual daemon connects successfully.
@@ -126,7 +135,14 @@ See [`docs/service-management.md`](docs/service-management.md) for systemd, laun
 
 ## Engine examples
 
-See [`docs/engine-examples.md`](docs/engine-examples.md) for Codex, Hermes, OpenCode, OpenClaw, Claude Code, and Custom CLI examples. See [`docs/compatibility.md`](docs/compatibility.md), [`docs/configuration.md`](docs/configuration.md), [`docs/security.md`](docs/security.md), and [`docs/troubleshooting.md`](docs/troubleshooting.md) for operations guidance.
+See [`docs/engine-examples.md`](docs/engine-examples.md) for supported command
+shapes for Codex, Hermes, OpenCode, OpenClaw, Claude Code, and custom CLIs.
+Examples are not an E2E compatibility certification; release evidence is
+required for the combinations listed in the release checklist. See
+[`docs/compatibility.md`](docs/compatibility.md),
+[`docs/configuration.md`](docs/configuration.md),
+[`docs/security.md`](docs/security.md), and
+[`docs/troubleshooting.md`](docs/troubleshooting.md) for operations guidance.
 
 ## Troubleshooting
 
@@ -162,7 +178,7 @@ Before publishing, create the public repository, push `main`, and verify the raw
 
 ## License
 
-LGPL-3.
+LGPL-3.0-or-later. See [`LICENSE`](LICENSE).
 
 
 ## Chat executions

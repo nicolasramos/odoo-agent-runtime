@@ -29,6 +29,7 @@ logger = logging.getLogger('odoo-agent-runtime')
 
 
 DEFAULT_TIMEOUT_SECONDS = 600
+ODOO_SESSION_COOKIE = 'session_id'
 
 
 def get_hostname():
@@ -67,9 +68,73 @@ class OdooAgentRuntime:
             'X-API-Key': api_key,
             'Content-Type': 'application/json',
         })
+        # Bootstrap is deliberately isolated from API authentication. It may
+        # follow redirects, so it must never share API headers with API calls.
+        self.bootstrap_session = requests.Session()
+        self.bootstrap_session.headers.clear()
 
     def _api_url(self, path):
         return f'{self.odoo_url}{path}'
+
+    def _has_odoo_origin(self, url):
+        """Return whether *url* has the configured Odoo origin."""
+        if not isinstance(url, str):
+            return False
+        try:
+            configured = urlparse(self.odoo_url)
+            candidate = urlparse(url)
+            configured_port = configured.port or (443 if configured.scheme == 'https' else 80)
+            candidate_port = candidate.port or (443 if candidate.scheme == 'https' else 80)
+        except ValueError:
+            return False
+        return (
+            bool(configured.scheme and configured.hostname and candidate.scheme and candidate.hostname)
+            and candidate.scheme.lower() == configured.scheme.lower()
+            and candidate.hostname.lower() == configured.hostname.lower()
+            and candidate_port == configured_port
+        )
+
+    def _bootstrap_validation_failed(self, message, *args):
+        """Record a non-retryable database bootstrap validation failure."""
+        self._database_bootstrap_failed = True
+        logger.error(message, *args)
+        return False
+
+    def _bootstrap_session_cookies(self, response):
+        """Yield Odoo session cookies collected during database bootstrap."""
+        for cookies in (self.bootstrap_session.cookies, getattr(response, 'cookies', None)):
+            if cookies is None:
+                continue
+            try:
+                for cookie in cookies:
+                    if cookie.name == ODOO_SESSION_COOKIE and cookie.value:
+                        yield cookie
+            except TypeError:
+                continue
+
+    def _session_cookie_applies_to_api_url(self, cookie):
+        """Return whether a session cookie will be sent to the runtime API URL."""
+        api_url = urlparse(self._api_url('/api/agent/runtime/heartbeat'))
+        host = api_url.hostname
+        if not host:
+            return False
+
+        cookie_domain = (getattr(cookie, 'domain', '') or '').lstrip('.').lower()
+        cookie_path = getattr(cookie, 'path', '/') or '/'
+        if not cookie_domain:
+            return False
+        if getattr(cookie, 'domain_specified', False):
+            matches_host = host.lower() == cookie_domain or host.lower().endswith(f'.{cookie_domain}')
+        else:
+            matches_host = host.lower() == cookie_domain
+        if not matches_host:
+            return False
+        if not api_url.path.startswith(cookie_path):
+            return False
+        if not cookie_path.endswith('/') and len(api_url.path) > len(cookie_path):
+            if api_url.path[len(cookie_path)] != '/':
+                return False
+        return not getattr(cookie, 'secure', False) or api_url.scheme.lower() == 'https'
 
     def _bootstrap_database_session(self):
         """Select the configured Odoo database and retain its session cookie."""
@@ -79,31 +144,61 @@ class OdooAgentRuntime:
             return False
 
         login_url = f'{self.odoo_url}/web/login?{urlencode({"db": self.database})}'
+        # Defensive even if this object is reused unexpectedly: bootstrap must
+        # never carry an API key across its redirect chain.
+        for header in list(self.bootstrap_session.headers):
+            if header.lower() == 'x-api-key':
+                del self.bootstrap_session.headers[header]
         try:
-            response = self.session.get(login_url, allow_redirects=True, timeout=30)
+            response = self.bootstrap_session.get(login_url, allow_redirects=True, timeout=30)
             response.raise_for_status()
         except requests.exceptions.RequestException as exc:
-            self._database_bootstrap_failed = True
             logger.error(
                 'Database bootstrap failed for ODOO_DATABASE=%r: %s. '
-                'Runtime API calls were not attempted.',
+                'Runtime API calls were not attempted; the runtime can retry.',
                 self.database,
                 exc,
             )
             return False
 
         final_url = getattr(response, 'url', '')
-        if (
-            isinstance(final_url, str)
-            and urlparse(final_url).path.rstrip('/') == '/web/database/selector'
-        ):
-            self._database_bootstrap_failed = True
-            logger.error(
+        redirect_urls = [
+            getattr(redirect, 'url', None)
+            for redirect in (getattr(response, 'history', ()) or ())
+        ]
+        if any(not self._has_odoo_origin(url) for url in [*redirect_urls, final_url]):
+            return self._bootstrap_validation_failed(
+                'Database bootstrap failed for ODOO_DATABASE=%r: cross-origin redirect chain or final URL. '
+                'Runtime API calls were not attempted.',
+                self.database,
+            )
+
+        if any(urlparse(url).path.rstrip('/') == '/web/database/selector' for url in [*redirect_urls, final_url]):
+            return self._bootstrap_validation_failed(
                 'Database bootstrap failed for ODOO_DATABASE=%r: redirected to '
                 '/web/database/selector. Runtime API calls were not attempted.',
                 self.database,
             )
-            return False
+
+        session_cookies = list(self._bootstrap_session_cookies(response))
+        if not session_cookies:
+            return self._bootstrap_validation_failed(
+                'Database bootstrap failed for ODOO_DATABASE=%r: no Odoo session cookie was set. '
+                'Runtime API calls were not attempted.',
+                self.database,
+            )
+
+        if not any(self._session_cookie_applies_to_api_url(cookie) for cookie in session_cookies):
+            return self._bootstrap_validation_failed(
+                'Database bootstrap failed for ODOO_DATABASE=%r: Odoo session cookie does not apply to the runtime API URL. '
+                'Runtime API calls were not attempted.',
+                self.database,
+            )
+
+        self.session.cookies.update(self.bootstrap_session.cookies)
+        response_cookies = getattr(response, 'cookies', None)
+        if response_cookies is not None:
+            self.session.cookies.update(response_cookies)
 
         self._database_bootstrapped = True
         logger.info('Selected Odoo database %r for this runtime session.', self.database)
@@ -488,8 +583,13 @@ def setup_logging(verbose=False):
     )
 
 
+def load_runtime_dotenv(dotenv_path=None):
+    """Load runtime configuration without expanding dollar expressions."""
+    return load_dotenv(dotenv_path=dotenv_path, interpolate=False)
+
+
 def main():
-    load_dotenv()
+    load_runtime_dotenv()
 
     parser = argparse.ArgumentParser(description='Odoo Agent Runtime Daemon')
     parser.add_argument('--odoo-url', default=os.getenv('ODOO_URL', 'http://localhost:8069'),

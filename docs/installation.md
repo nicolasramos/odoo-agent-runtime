@@ -2,6 +2,10 @@
 
 Install the runtime daemon on every machine that should execute Odoo agent work.
 
+The installers and service modes are supported on their documented platforms.
+They are E2E-proven for a release only when the corresponding real-host checks
+in [`release-checklist.md`](release-checklist.md) are recorded.
+
 ## Quick path
 
 1. Create a runtime record in Odoo.
@@ -15,7 +19,7 @@ Install the runtime daemon on every machine that should execute Odoo agent work.
 ## Linux
 
 ```bash
-git clone https://github.com/nicolasramos-es/odoo-agent-runtime.git
+git clone https://github.com/nicolasramos/odoo-agent-runtime.git
 cd odoo-agent-runtime
 bash install.sh
 ```
@@ -31,7 +35,7 @@ Systemd mode is available from the installer when selected.
 ## macOS
 
 ```bash
-git clone https://github.com/nicolasramos-es/odoo-agent-runtime.git
+git clone https://github.com/nicolasramos/odoo-agent-runtime.git
 cd odoo-agent-runtime
 bash install.sh
 ```
@@ -41,7 +45,7 @@ Launchd mode is available from the installer when selected.
 ## Windows
 
 ```powershell
-git clone https://github.com/nicolasramos-es/odoo-agent-runtime.git
+git clone https://github.com/nicolasramos/odoo-agent-runtime.git
 cd odoo-agent-runtime
 .\install.ps1
 ```

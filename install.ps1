@@ -73,7 +73,7 @@ if (Test-Path "$scriptDir\daemon.py") {
     if (Test-Path "$scriptDir\requirements.txt") { Copy-Item "$scriptDir\requirements.txt" "$InstallDir\requirements.txt" -Force }
     Log "Files copied from local source"
 } else {
-    $baseUrl = "https://raw.githubusercontent.com/nicolasramos-es/odoo-agent-runtime/main"
+    $baseUrl = "https://raw.githubusercontent.com/nicolasramos/odoo-agent-runtime/main"
     Invoke-WebRequest -Uri "$baseUrl/daemon.py" -OutFile "$InstallDir\daemon.py"
     Invoke-WebRequest -Uri "$baseUrl/requirements.txt" -OutFile "$InstallDir\requirements.txt"
     Log "Files downloaded"

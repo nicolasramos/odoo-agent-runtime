@@ -96,7 +96,7 @@ if [ -f "$SCRIPT_DIR/daemon.py" ]; then
     cp "$SCRIPT_DIR/requirements.txt" "$INSTALL_DIR/requirements.txt" 2>/dev/null || true
     log "Files copied from local source"
 else
-    BASE_URL="https://raw.githubusercontent.com/nicolasramos-es/odoo-agent-runtime/main"
+    BASE_URL="https://raw.githubusercontent.com/nicolasramos/odoo-agent-runtime/main"
     curl -fsSL "$BASE_URL/daemon.py" -o "$INSTALL_DIR/daemon.py"
     curl -fsSL "$BASE_URL/requirements.txt" -o "$INSTALL_DIR/requirements.txt"
     log "Files downloaded"
