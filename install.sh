@@ -29,6 +29,26 @@ ask_yes_no() {
         *) return 1 ;;
     esac
 }
+dotenv_value() {
+    local value="$1"
+    if [[ "$value" == *$'\n'* || "$value" == *$'\r'* ]]; then
+        error "Configuration values cannot contain line breaks."
+        exit 1
+    fi
+    # python-dotenv decodes backslash and double-quote escapes in double quotes.
+    # Dollar signs and backticks are already literal, so escaping them corrupts values.
+    printf '%s' "$value" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+write_env_file() {
+    {
+        printf '%s\n' '# Odoo Agent Runtime Configuration'
+        printf 'ODOO_URL="%s"\n' "$(dotenv_value "$ODOO_URL")"
+        printf 'ODOO_DATABASE="%s"\n' "$(dotenv_value "$ODOO_DATABASE")"
+        printf 'API_KEY="%s"\n' "$(dotenv_value "$API_KEY")"
+        printf 'RUNTIME_NAME="%s"\n' "$(dotenv_value "$RUNTIME_NAME")"
+        printf 'POLL_INTERVAL="%s"\n' "$(dotenv_value "$POLL_INTERVAL")"
+    } > "$ENV_FILE"
+}
 
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -58,6 +78,7 @@ log "Python found: $($PYTHON --version)"
 printf '\n'
 info "Configuration"
 ODOO_URL="$(ask 'Odoo URL' 'http://localhost:8069')"
+ODOO_DATABASE="$(ask 'Odoo database (optional; required for multi-database Odoo)')"
 API_KEY="$(ask 'Runtime API key')"
 while [ -z "$API_KEY" ]; do
     error "Runtime API key cannot be empty."
@@ -98,13 +119,7 @@ if [ -f "$ENV_FILE" ] && ! ask_yes_no "Existing .env found. Overwrite it?" "no";
     warn "Keeping existing .env. Writing new configuration to .env.new."
 fi
 
-cat > "$ENV_FILE" <<EOF
-# Odoo Agent Runtime Configuration
-ODOO_URL=$ODOO_URL
-API_KEY=$API_KEY
-RUNTIME_NAME=$RUNTIME_NAME
-POLL_INTERVAL=$POLL_INTERVAL
-EOF
+write_env_file
 log "$(basename "$ENV_FILE") written"
 if [ "$(basename "$ENV_FILE")" != ".env" ]; then
     warn "Background service install skipped because the active .env was not overwritten."

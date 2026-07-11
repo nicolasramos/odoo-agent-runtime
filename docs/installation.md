@@ -57,6 +57,12 @@ Scheduled Task mode is available from the installer when selected.
 | Runtime name | `agent-worker-01` |
 | Poll interval | `10` |
 
+### Optional Odoo database
+
+`ODOO_DATABASE` is optional for a single-database Odoo deployment. Provide it when the Odoo URL serves multiple databases, or when your runtime must always target one specific database. On Linux and macOS, enter it at the `install.sh` prompt; on Windows, enter it at the `install.ps1` prompt. Each installer writes an empty value when it is not needed.
+
+Keep the runtime API key separate from the Odoo URL. Enter it only at the **Runtime API key** prompt; never append it to a URL, query string, bookmark, or command history.
+
 ## Existing `.env`
 
 The installer does not silently overwrite `.env`. If `.env` exists, it asks before replacing it. If you decline, it writes `.env.new` and does not install/start a background service with stale settings.

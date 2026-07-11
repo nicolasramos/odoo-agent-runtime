@@ -16,6 +16,24 @@ function AskYesNo($Prompt, $Default = "no") {
     if (-not $value) { $value = $Default }
     return $value.ToLower() -in @("y", "yes")
 }
+function ConvertToDotenvValue($Value) {
+    if ($Value -match "[\r\n]") {
+        throw "Configuration values cannot contain line breaks."
+    }
+    # python-dotenv decodes backslash and double-quote escapes in double quotes.
+    # Dollar signs and backticks are already literal, so escaping them corrupts values.
+    return $Value.Replace('\', '\\').Replace('"', '\"')
+}
+function Write-DotenvFile($Path) {
+    @(
+        "# Odoo Agent Runtime Configuration"
+        ('ODOO_URL="{0}"' -f (ConvertToDotenvValue $OdooUrl))
+        ('ODOO_DATABASE="{0}"' -f (ConvertToDotenvValue $OdooDatabase))
+        ('API_KEY="{0}"' -f (ConvertToDotenvValue $ApiKey))
+        ('RUNTIME_NAME="{0}"' -f (ConvertToDotenvValue $RuntimeName))
+        ('POLL_INTERVAL="{0}"' -f (ConvertToDotenvValue $PollInterval))
+    ) | Out-File -FilePath $Path -Encoding ASCII
+}
 
 Write-Host ""
 Write-Host "Odoo Agent Runtime Installer (Windows)"
@@ -38,6 +56,7 @@ if (-not $python) {
 Log "Python found"
 
 $OdooUrl = Ask "Odoo URL" "http://localhost:8069"
+$OdooDatabase = Ask "Odoo database (optional; required for multi-database Odoo)"
 $ApiKey = Ask "Runtime API key"
 while ([string]::IsNullOrWhiteSpace($ApiKey)) {
     Err "Runtime API key cannot be empty."
@@ -69,13 +88,7 @@ if ((Test-Path $envFile) -and -not (AskYesNo "Existing .env found. Overwrite it?
     Warn "Keeping existing .env. Writing new configuration to .env.new."
 }
 
-@"
-# Odoo Agent Runtime Configuration
-ODOO_URL=$OdooUrl
-API_KEY=$ApiKey
-RUNTIME_NAME=$RuntimeName
-POLL_INTERVAL=$PollInterval
-"@ | Out-File -FilePath $envFile -Encoding ASCII
+Write-DotenvFile $envFile
 Log "$(Split-Path -Leaf $envFile) written"
 if ((Split-Path -Leaf $envFile) -ne ".env") {
     Warn "Scheduled Task creation skipped because the active .env was not overwritten."

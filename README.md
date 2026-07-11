@@ -19,7 +19,7 @@ It supports Linux, macOS, and Windows.
 
 1. Create a runtime in Odoo and generate its API key.
 2. Install this runtime on the machine that will execute agent CLIs.
-3. Enter Odoo URL, API key, runtime name, and poll interval.
+3. Enter Odoo URL, optional database name, API key, runtime name, and poll interval.
 4. Choose manual mode or background service mode.
 5. Confirm the runtime appears online in Odoo.
 6. Assign agents to this runtime and send Project tasks to them.
@@ -40,6 +40,7 @@ curl -fsSL https://raw.githubusercontent.com/nicolasramos-es/odoo-agent-runtime/
 The installer asks for:
 
 - Odoo URL;
+- optional Odoo database name for multi-database instances;
 - runtime API key;
 - runtime display name;
 - polling interval;
@@ -71,6 +72,7 @@ The runtime reads `.env` and accepts CLI flags.
 | Variable | Flag | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `ODOO_URL` | `--odoo-url` | No | `http://localhost:8069` | Odoo base URL. |
+| `ODOO_DATABASE` | `--odoo-database` | No | empty | Database name for a multi-database Odoo instance. When set, the runtime follows `/web/login?db=<URL-encoded database>` before runtime API calls and retains the selected database's session cookie. Omit or leave blank to preserve single-database behavior. |
 | `API_KEY` | `--api-key` | Yes | empty | Runtime API key generated in Odoo. |
 | `RUNTIME_NAME` | `--name` | No | host name | Display name shown in Odoo. |
 | `POLL_INTERVAL` | `--poll-interval` | No | `10` | Seconds between polling cycles. |
@@ -80,10 +82,13 @@ Example:
 ```bash
 python3 daemon.py \
   --odoo-url https://odoo.example.com \
+  --odoo-database "customer-production" \
   --api-key "YOUR_RUNTIME_KEY" \
   --name "agent-worker-01" \
   --poll-interval 5
 ```
+
+`ODOO_DATABASE` is optional. Use it only when the Odoo server hosts multiple databases. The database selection request follows redirects and keeps the resulting session cookie for subsequent runtime API calls. Do not put API keys in URLs; configure `API_KEY` through `.env` or `--api-key`.
 
 ## Command placeholders
 
@@ -129,6 +134,7 @@ See [`docs/engine-examples.md`](docs/engine-examples.md) for Codex, Hermes, Open
 | --- | --- |
 | `API key is required` | Set `API_KEY` in `.env` or pass `--api-key`. |
 | Runtime does not appear online | Check `ODOO_URL`, API key, firewall, and Odoo logs. |
+| Runtime stops before API calls on a multi-database server | Verify `ODOO_DATABASE` matches the database name and that `ODOO_URL` can reach its login page. Leave `ODOO_DATABASE` blank for a single-database server. |
 | Execution remains queued | Confirm the agent is assigned to this runtime and the daemon is running. |
 | Execution fails with CLI not found | Install the CLI on this host or fix the agent `cli_command` in Odoo. |
 | Service does not start | Run the daemon manually first, then inspect system logs. |
