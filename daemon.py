@@ -140,7 +140,7 @@ class OdooAgentRuntime:
     def send_heartbeat(self):
         """Send heartbeat to Odoo."""
         data = {
-            'version': '0.2.1',
+            'version': '0.3.0',
             'runtime_name': self.name,
             'device_info': get_device_info(),
         }
