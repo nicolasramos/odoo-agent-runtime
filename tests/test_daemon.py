@@ -11,12 +11,11 @@ from daemon import OdooAgentRuntime
 
 
 class DatabaseBootstrapTests(unittest.TestCase):
-    def make_runtime(self, database=None, poll_interval=10):
+    def make_runtime(self, database=None):
         runtime = OdooAgentRuntime(
             odoo_url='https://odoo.example.com',
             api_key='runtime-secret',
             name='test-runtime',
-            poll_interval=poll_interval,
             database=database,
         )
         runtime.session = MagicMock()
@@ -279,18 +278,6 @@ class DatabaseBootstrapTests(unittest.TestCase):
 
         runtime.bootstrap_session.get.assert_not_called()
         runtime.session.request.assert_called_once()
-
-    def test_heartbeat_payload_includes_poll_interval(self):
-        runtime = self.make_runtime(poll_interval=15)
-        runtime.session.request.return_value = MagicMock(
-            content=b'{"status": "ok"}',
-            json=lambda: {'status': 'ok'},
-        )
-
-        runtime.send_heartbeat()
-
-        request_kwargs = runtime.session.request.call_args.kwargs
-        self.assertEqual(15, request_kwargs['json']['poll_interval'])
 
     def test_whitespace_only_database_skips_bootstrap(self):
         runtime = self.make_runtime(database='  \t ')
