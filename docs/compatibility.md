@@ -20,13 +20,14 @@ odoo-addons
 | Runtime version | Addon version | Status |
 | --- | --- | --- |
 | `0.1.x` | `18.0.1.4.x` | First public execution baseline. |
-| `0.2.x` | `18.0.1.5.x` | Chat executions and Odoo bus notifications. |
+| `0.2.x` | `18.0.1.5.x`‑`18.0.1.6.x` | Chat executions and Odoo bus notifications. |
+| `0.3.x` | `18.0.1.7.x` | Public release. Task-context Agent Communications UI on top of chat executions. |
 
 ## Compatibility rules
 
 - Runtime releases use semantic versioning.
 - Odoo addon releases use Odoo-style versioning.
-- Runtime `0.2.x` expects the addon execution API introduced in `18.0.1.4.x`.
+- Runtime `0.3.x` expects the addon execution API introduced in `18.0.1.4.x`.
 - The runtime still attempts legacy task endpoints as fallback, but new deployments should use execution endpoints.
 
 ## API expectations
@@ -58,7 +59,7 @@ A compatible Odoo agent configuration should send:
 
 ## Chat execution support
 
-Runtime `0.2.x` accepts execution payloads with optional chat fields:
+Runtime `0.3.x` accepts execution payloads with optional chat fields:
 
 - `source`;
 - `chat_message_id`;
