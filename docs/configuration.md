@@ -34,6 +34,9 @@ Before making runtime API calls, the runtime selects the configured database by
 requesting `/web/login?db=<URL-encoded database>` and following redirects. The
 resulting session cookie is retained and used for subsequent runtime API calls.
 
+This is supported multi-database behavior. A release may claim it is E2E-proven
+only after it passes the real multi-database scenario in the release checklist.
+
 Keep the Odoo URL free of credentials and API keys. Set `API_KEY` through the
 environment variable or `--api-key` flag; never put API keys in a URL.
 
@@ -61,6 +64,10 @@ Use stable names that identify the machine or workload:
 ## Agent CLI commands
 
 The runtime executes the command configured on each Odoo agent.
+
+Passing skills and MCP server configuration into the final instruction is
+supported. Successful execution against a custom skill or a concrete MCP stdio
+or HTTP server requires release-specific E2E evidence.
 
 Supported placeholders:
 
