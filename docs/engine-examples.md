@@ -14,7 +14,7 @@ The runtime uses `agent.cli_command` from Odoo when present. Keep commands expli
 ## Examples
 
 ```text
-opencode run --instruction {instruction}
+opencode run {instruction}
 hermes run --context {instruction}
 openclaw agent --task {task_name} --context {instruction}
 claude --print {instruction}

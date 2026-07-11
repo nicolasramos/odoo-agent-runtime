@@ -30,7 +30,7 @@ The runtime executes agent `cli_command` values configured in Odoo. Review those
 Prefer direct executable invocation:
 
 ```text
-opencode run --instruction {instruction}
+opencode run {instruction}
 ```
 
 Avoid commands that download and execute remote scripts.

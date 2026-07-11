@@ -51,7 +51,7 @@ Get-Command opencode
 Prefer placeholder-based commands:
 
 ```text
-opencode run --instruction {instruction}
+opencode run {instruction}
 ```
 
 Avoid shell-specific command strings when possible.

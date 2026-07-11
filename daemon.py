@@ -20,6 +20,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
+from urllib.parse import urlencode, urlparse
 
 import requests
 from dotenv import load_dotenv
@@ -51,13 +52,16 @@ def _first_present(*values):
 class OdooAgentRuntime:
     """Runtime daemon that connects to Odoo and executes agent work."""
 
-    def __init__(self, odoo_url, api_key, name, poll_interval=10, max_concurrent=3):
+    def __init__(self, odoo_url, api_key, name, poll_interval=10, max_concurrent=3, database=None):
         self.odoo_url = odoo_url.rstrip('/')
         self.api_key = api_key
         self.name = name
         self.poll_interval = poll_interval
         self.max_concurrent = max_concurrent
+        self.database = (database or '').strip() or None
         self.active_tasks = {}
+        self._database_bootstrapped = not self.database
+        self._database_bootstrap_failed = False
         self.session = requests.Session()
         self.session.headers.update({
             'X-API-Key': api_key,
@@ -67,8 +71,48 @@ class OdooAgentRuntime:
     def _api_url(self, path):
         return f'{self.odoo_url}{path}'
 
+    def _bootstrap_database_session(self):
+        """Select the configured Odoo database and retain its session cookie."""
+        if self._database_bootstrapped:
+            return True
+        if self._database_bootstrap_failed:
+            return False
+
+        login_url = f'{self.odoo_url}/web/login?{urlencode({"db": self.database})}'
+        try:
+            response = self.session.get(login_url, allow_redirects=True, timeout=30)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as exc:
+            self._database_bootstrap_failed = True
+            logger.error(
+                'Database bootstrap failed for ODOO_DATABASE=%r: %s. '
+                'Runtime API calls were not attempted.',
+                self.database,
+                exc,
+            )
+            return False
+
+        final_url = getattr(response, 'url', '')
+        if (
+            isinstance(final_url, str)
+            and urlparse(final_url).path.rstrip('/') == '/web/database/selector'
+        ):
+            self._database_bootstrap_failed = True
+            logger.error(
+                'Database bootstrap failed for ODOO_DATABASE=%r: redirected to '
+                '/web/database/selector. Runtime API calls were not attempted.',
+                self.database,
+            )
+            return False
+
+        self._database_bootstrapped = True
+        logger.info('Selected Odoo database %r for this runtime session.', self.database)
+        return True
+
     def _request(self, method, path, **kwargs):
         """Make an API request with error handling."""
+        if not self._bootstrap_database_session():
+            return None
         try:
             resp = self.session.request(method, self._api_url(path), timeout=30, **kwargs)
             resp.raise_for_status()
@@ -310,7 +354,7 @@ class OdooAgentRuntime:
 
         cli_map = {
             'hermes': ['hermes', 'run', '--task', task_name, '--context', instruction],
-            'opencode': ['opencode', 'run', '--instruction', instruction],
+            'opencode': ['opencode', 'run', instruction],
             'openclaw': ['openclaw', 'agent', '--task', task_name, '--context', instruction],
         }
 
@@ -390,6 +434,13 @@ class OdooAgentRuntime:
         logger.info(f'Starting Odoo Agent Runtime: {self.name}')
         logger.info(f'Connecting to: {self.odoo_url}')
 
+        if not self._bootstrap_database_session():
+            logger.error(
+                'Cannot start runtime because ODOO_DATABASE bootstrap failed. '
+                'Verify the database name and Odoo access; this is not an API key error.'
+            )
+            return False
+
         if not self.send_heartbeat():
             logger.error('Failed to connect to Odoo. Check URL and API key.')
             return False
@@ -443,6 +494,8 @@ def main():
     parser = argparse.ArgumentParser(description='Odoo Agent Runtime Daemon')
     parser.add_argument('--odoo-url', default=os.getenv('ODOO_URL', 'http://localhost:8069'),
                         help='Odoo instance URL')
+    parser.add_argument('--odoo-database', default=os.getenv('ODOO_DATABASE', ''),
+                        help='Optional Odoo database for multi-database instances')
     parser.add_argument('--api-key', default=os.getenv('API_KEY', ''),
                         help='Runtime API key')
     parser.add_argument('--name', default=os.getenv('RUNTIME_NAME', get_hostname()),
@@ -464,6 +517,7 @@ def main():
         api_key=args.api_key,
         name=args.name,
         poll_interval=args.poll_interval,
+        database=args.odoo_database,
     )
 
     success = runtime.run()

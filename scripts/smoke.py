@@ -65,7 +65,7 @@ def main():
         {
             'name': 'Example',
             'engine': 'custom',
-            'cli_command': 'agent-cli run --instruction {instruction} --name "{task_name}"',
+            'cli_command': 'agent-cli run {instruction} --name "{task_name}"',
         },
         complex_instruction,
         'Task with spaces',
@@ -74,7 +74,6 @@ def main():
     assert cmd == [
         'agent-cli',
         'run',
-        '--instruction',
         complex_instruction,
         '--name',
         'Task with spaces',
