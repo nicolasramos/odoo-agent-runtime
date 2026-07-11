@@ -34,7 +34,7 @@ It supports Linux, macOS, and Windows.
 ## Linux and macOS install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/nicolasramos-es/odoo-agent-runtime/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nicolasramos/odoo-agent-runtime/main/install.sh | bash
 ```
 
 The installer asks for:
@@ -60,7 +60,7 @@ Open PowerShell. Use Administrator only if your environment requires it for Sche
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/nicolasramos-es/odoo-agent-runtime/main/install.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/nicolasramos/odoo-agent-runtime/main/install.ps1'))
 ```
 
 Choose manual mode for a first test. Choose scheduled task mode only after the manual daemon connects successfully.
