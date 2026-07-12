@@ -160,6 +160,15 @@ $errors
 
 Before publishing, create the public repository, push `main`, and verify the raw GitHub URLs for `install.sh` and `install.ps1`.
 
+
+## Author
+
+**Odoo AI Agent System** was created and is maintained by **Nicolás Ramos**
+([nicolasramos.es](https://nicolasramos.es), [@nicolasramos_es](https://twitter.com/nicolasramos_es)).
+
+If you find this project useful, please consider giving it a star on GitHub,
+reporting issues, or contributing improvements.
+
 ## License
 
 LGPL-3.
