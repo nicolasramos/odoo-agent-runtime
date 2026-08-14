@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 from http.cookiejar import Cookie
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import requests
 
@@ -308,6 +308,105 @@ class DotenvTests(unittest.TestCase):
                 os.environ.pop('RUNTIME_SECRET', None)
             else:
                 os.environ['RUNTIME_SECRET'] = old_value
+
+
+class SplitCliCommandTests(unittest.TestCase):
+    """Tests for _split_cli_command platform-specific behavior."""
+
+    def test_split_posix_true_handles_spaces_in_path(self):
+        """posix=True: quoted paths with spaces stay as single token."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        # With posix=True, a quoted path with spaces is one token
+        result = runtime._split_cli_command('/path/to/my script.py arg1')
+        self.assertEqual(result, ['/path/to/my', 'script.py', 'arg1'])
+
+    @patch('daemon.platform.system', return_value='Windows')
+    def test_split_posix_false_handles_spaces_in_path(self, mock_platform):
+        """posix=False: unquoted spaces split tokens (no shell quoting)."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        # With posix=False, unquoted spaces split the path — no shell quoting support
+        result = runtime._split_cli_command('/path/to/my script.py arg1')
+        self.assertEqual(result, ['/path/to/my', 'script.py', 'arg1'])
+
+    @patch('daemon.platform.system', return_value='Windows')
+    def test_split_posix_false_treats_quotes_as_literal(self, mock_platform):
+        """posix=False: double quotes are literal characters, not shell metacharacters."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        # With posix=False, double quotes are NOT interpreted as quoting
+        result = runtime._split_cli_command('python script.py "hello world"')
+        self.assertEqual(result, ['python', 'script.py', '"hello world"'])
+
+    def test_split_posix_true_handles_quoted_args(self):
+        """posix=True: quoted arguments with spaces stay as single token."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        result = runtime._split_cli_command("python script.py 'hello world'")
+        self.assertEqual(result, ['python', 'script.py', 'hello world'])
+
+    def test_split_posix_false_handles_quoted_args(self):
+        """posix=False: quoted arguments with spaces stay as single token."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        result = runtime._split_cli_command("python script.py 'hello world'")
+        self.assertEqual(result, ['python', 'script.py', 'hello world'])
+
+    def test_split_posix_true_handles_escaped_quotes(self):
+        """posix=True: escaped quotes inside quoted strings."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        result = runtime._split_cli_command("python script.py \"say \\\"hi\\\"\"")
+        self.assertEqual(result, ['python', 'script.py', 'say "hi"'])
+
+    def test_split_posix_false_handles_escaped_quotes(self):
+        """posix=False: escaped quotes inside quoted strings."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        result = runtime._split_cli_command("python script.py \"say \\\"hi\\\"\"")
+        self.assertEqual(result, ['python', 'script.py', 'say "hi"'])
+
+    def test_split_handles_empty_string(self):
+        """Empty command returns empty list."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        result = runtime._split_cli_command('')
+        self.assertEqual(result, [])
+
+    def test_split_handles_simple_command(self):
+        """Simple unquoted command splits correctly."""
+        runtime = daemon.OdooAgentRuntime(
+            odoo_url='https://odoo.example.com',
+            api_key='test-key',
+            name='test-runtime',
+        )
+        result = runtime._split_cli_command('python script.py arg1 arg2')
+        self.assertEqual(result, ['python', 'script.py', 'arg1', 'arg2'])
 
 
 if __name__ == '__main__':

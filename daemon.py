@@ -415,7 +415,8 @@ class OdooAgentRuntime:
 
     def _split_cli_command(self, cli_command):
         """Split a configured CLI command into argv tokens."""
-        return shlex.split(cli_command, posix=True)
+        posix = platform.system() != 'Windows'
+        return shlex.split(cli_command, posix=posix)
 
     def _render_cli_tokens(self, tokens, template_values):
         """Replace placeholders after splitting so long values remain one argv item."""
