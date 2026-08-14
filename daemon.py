@@ -549,16 +549,19 @@ class OdooAgentRuntime:
                 if tasks:
                     logger.info(f'Found {len(tasks)} pending execution(s)')
 
+                # Build the set of current task IDs from the single poll result.
+                current_ids = {task['id'] for task in tasks}
+
                 for task in tasks:
                     task_id = task['id']
                     if task_id not in self.active_tasks:
                         self.active_tasks[task_id] = task
                         self.execute_task(task)
 
-                active_ids = {task['id'] for task in self.poll_tasks()}
+                # Reuse the same poll result to prune stale active_tasks.
                 self.active_tasks = {
                     tid: t for tid, t in self.active_tasks.items()
-                    if t['id'] in active_ids
+                    if t['id'] in current_ids
                 }
 
                 time.sleep(self.poll_interval)
