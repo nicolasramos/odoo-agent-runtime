@@ -238,6 +238,7 @@ class OdooAgentRuntime:
             'version': '0.3.0',
             'runtime_name': self.name,
             'device_info': get_device_info(),
+            'poll_interval': self.poll_interval,
         }
         result = self._request('POST', '/api/agent/runtime/heartbeat', json=data)
         if result:
