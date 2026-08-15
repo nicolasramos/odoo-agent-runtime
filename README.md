@@ -75,7 +75,7 @@ The runtime reads `.env` and accepts CLI flags.
 | `ODOO_DATABASE` | `--odoo-database` | No | empty | Database name for a multi-database Odoo instance. When set, the runtime follows `/web/login?db=<URL-encoded database>` before runtime API calls and retains the selected database's session cookie. Omit or leave blank to preserve single-database behavior. |
 | `API_KEY` | `--api-key` | Yes | empty | Runtime API key generated in Odoo. |
 | `RUNTIME_NAME` | `--name` | No | host name | Display name shown in Odoo. |
-| `POLL_INTERVAL` | `--poll-interval` | No | `10` | Seconds between polling cycles. |
+| `POLL_INTERVAL` | `--poll-interval` | No | `10` | Seconds between polling cycles. Reported in the heartbeat payload so Odoo can compute the offline threshold. |
 
 Example:
 
@@ -117,6 +117,10 @@ The runtime uses these Odoo endpoints:
 | Complete | `POST /api/agent/execution/{id}/complete` |
 | Fail | `POST /api/agent/execution/{id}/fail` |
 | Acknowledge cancellation | `POST /api/agent/execution/{id}/cancel/ack` |
+
+The heartbeat payload includes `version`, `runtime_name`, `device_info`, and
+`poll_interval` (seconds). Odoo uses `poll_interval` to compute the offline
+threshold: 3× `poll_interval`, floored at 60 seconds and capped at 10 minutes.
 
 Legacy `/api/agent/task/{id}/...` endpoints are still used as fallback for older Odoo installations.
 

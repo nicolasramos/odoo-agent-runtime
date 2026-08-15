@@ -44,6 +44,10 @@ environment variable or `--api-key` flag; never put API keys in a URL.
 
 Start with `10` seconds. Lower values feel more responsive but increase traffic. Higher values reduce traffic but make queues feel slower.
 
+The heartbeat payload reports `poll_interval` (seconds), so Odoo can compute the
+runtime's offline threshold as 3× `poll_interval`, floored at 60 seconds and
+capped at 10 minutes.
+
 ## Runtime name
 
 Use stable names that identify the machine or workload:
